@@ -24,18 +24,19 @@ class MostPopular(object):
 
     def _build_model(self):
         model_path = self._get_model_path()
-        if os.path.isfile(model_path):
+        if os.path.isfile(model_path): # 파일이 존재하면 끝내고 없으면 모델이 있는 파일을 만들어 준다
             return
 
         freq = {}
-        print('building model..')
-        for path, _ in tqdm.tqdm(iterate_data_files(self.from_dtm, self.to_dtm),
-                                 mininterval=1):
+        print('building model...')
+        # 기간내에 아티클마다 조회수가 저장되게 된다
+        for path, _ in tqdm.tqdm(iterate_data_files(self.from_dtm, self.to_dtm), mininterval=1):
             for line in open(path):
                 seen = line.strip().split()[1:]
                 for s in seen:
-                    freq[s] = freq.get(s, 0) + 1
-        freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
+                    freq[s] = freq.get(s, 0) + 1 # 해당 키값 s에 해당하는 value값에 1을 더한걸 value값으로 갱신 value값이 없는경우 0으로 초기화해서 1더한걸 리턴
+        freq = sorted(freq.items(), key=lambda x: x[1], reverse=True) # value값에 따른 내림차순으로 정렬
+        # print(freq) # ('@hotelscombined_399', 1) 와 같은 인자를 가진 리스트로 저장
         open(model_path, 'wb').write(cPickle.dumps(freq, 2))
         print('model built')
 
@@ -45,11 +46,11 @@ class MostPopular(object):
         ret = cPickle.load(open(model_path, 'rb'))
         return ret
 
+    # 평가할 유저가 최근에 본 아티클을 리턴한다
     def _get_seens(self, users):
         set_users = set(users)
         seens = {}
-        for path, _ in tqdm.tqdm(iterate_data_files(self.from_dtm, self.to_dtm),
-                                 mininterval=1):
+        for path, _ in tqdm.tqdm(iterate_data_files(self.from_dtm, self.to_dtm), mininterval=1):
             for line in open(path):
                 tkns = line.strip().split()
                 userid, seen = tkns[0], tkns[1:]
@@ -58,7 +59,7 @@ class MostPopular(object):
                 seens[userid] = seen
         return seens
 
-    def recommend(self, userlist_path, out_path):
+    def recommend(self, userlist_path, out_path): # ./tmp/dev.users ./tmp/dev.users.recommend
         mp = self._get_model()
         mp = [a for a, _ in mp]
 
@@ -66,7 +67,7 @@ class MostPopular(object):
             users = [u.strip() for u in open(userlist_path)]
             seens = self._get_seens(users)
             for user in users:
-                seen = set(seens.get(user, []))
+                seen = set(seens.get(user, [])) # 해당 유저가 최근에 본 아티클을 중복 없는 집합으로 받는다
                 recs = mp[:self.topn + len(seen)]
                 sz = len(recs)
                 recs = [r for r in recs if r not in seens]

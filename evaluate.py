@@ -54,9 +54,10 @@ def _entropy_diversity(recs, topn):
     return ent
 
 
-def evaluate(recs_path, dev_path, topn=100):
+def evaluate(recs_path, dev_path, topn=100): # ./tmp/dev.users.recommend ./tmp/dev --topn=100
     recs = {}
     target_users = set()
+    # 유저에 대해 추천한 목록들을 받아온다
     for line in open(recs_path):
         tkns = line.strip().split()
         userid, rec = tkns[0], tkns[1:]
@@ -64,6 +65,7 @@ def evaluate(recs_path, dev_path, topn=100):
         recs[userid] = rec
 
     gt = {}
+    # 2월 20일 이후에 실제로 타겟 유저가 본 아티클들을 받아온다
     for line in open(dev_path):
         tkns = line.strip().split()
         if tkns[0] not in target_users:
@@ -71,6 +73,7 @@ def evaluate(recs_path, dev_path, topn=100):
         userid, seen = tkns[0], tkns[1:]
         gt[userid] = seen
 
+    # 3가지 평가 방식으로 진행
     print('MAP@%s: %s' % (topn, _map(recs, gt, topn)))
     print('NDCG@%s: %s' % (topn, _ndcg(recs, gt)))
     print('EntDiv@%s: %s' % (topn, _entropy_diversity(recs, topn)))
